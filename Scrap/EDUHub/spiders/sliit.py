@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 import scrapy
+from scrapy.spiders import Rule, CrawlSpider
 from scrapy.selector import Selector
-from scrapy.contrib.spiders import Rule
 from scrapy.item import Item, Field
 from scrapy.selector import HtmlXPathSelector
 from urllib.parse import urljoin
-import re
 from scrapy.http import Request
 from scrapy.linkextractors import LinkExtractor
-
 class Page(Item):
     Institute = Field()
     City = Field()
@@ -18,37 +16,25 @@ class Page(Item):
     
 
 
-class SliitSpider(scrapy.Spider):
+class SliitSpider(CrawlSpider):
     name = 'sliit'
     allowed_domains = ['sliit.lk']
-    start_urls = ['https://www.sliit.lk/computing/programms',
-                  'https://www.sliit.lk/engineering/programms',
-                  'https://www.sliit.lk/business/programms', 
-                  'https://www.sliit.lk/science-education/undergraduate-degree-programs']
+    start_urls = ['https://www.sliit.lk',]
     
-    seen = set()
-    rules=(
-        Rule(LinkExtractor(deny=('.+\.lk', ))),
-    )
+    rules = [
+        Rule(LinkExtractor(deny =('/staff/'))),
+        Rule(LinkExtractor(allow =('computing/|engineering/|business/|science-education/|graduate-studies-research/')), follow=True, callback="parse1")
+      
+    ]
+
     
-    def parse(self, response):
-        if response.url in self.seen:
-            self.log('already seen  %s' % response.url)
-        else:
-            self.log('parsing  %s' % response.url)
-            self.seen.add(response.url)
-            
+    def parse1(self, response):
+        print(response.request.url)    
         hxs = HtmlXPathSelector(response)
         item = Page()
-        item['Content'] = hxs.select('//body').extract()
+        item['Content'] = hxs.select('//section').extract()
         item['City'] = {'Kandy', 'Colombo', 'Kuruegala'}
         item['Institute'] = {'SLIIT', 'Sri Lanka Institute of Information Technology'}
         item['URL'] = response.request.url
         yield(item)
-        
-        for url in hxs.select('//a/@href').extract():
-            url = urljoin(response.url, url)
-            if not url in self.seen and not re.search(r'.(pdf|zip|jar|jpg)$', url):
-                self.log("yielding request " + url)
-                yield Request(url, callback=self.parse)
         
