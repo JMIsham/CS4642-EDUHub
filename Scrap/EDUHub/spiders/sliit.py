@@ -28,8 +28,6 @@ class SliitSpider(CrawlSpider):
     follow=True, callback="parse1")
       
     ]
-
-    
     def parse1(self, response):
         print("***************************** VISITED *********************************************")
         aTags = re.compile(r'<a.*?/a>')
@@ -37,13 +35,12 @@ class SliitSpider(CrawlSpider):
         soup = BeautifulSoup(responseBody, 'html.parser')
         soup.a.com
         list_of_section = soup.find_all("section")
-        p = re.compile(r'\n+')
+        p = re.compile('\n(\n| )*')
         sections = ""
         for section in list_of_section:
             current = p.sub('\n',aTags.sub('',str(section.get_text())))
             if (("\t" not in current) & ("\r" not in current)): 
                 sections += current 
-                sections += "\n"
         item = Page()
         item['Content'] = sections
         item['City'] = {'Kandy', 'Colombo', 'Kuruegala'}
@@ -51,3 +48,16 @@ class SliitSpider(CrawlSpider):
         item['URL'] = response.request.url
         yield(item)
         
+
+class SaitmSpider(CrawlSpider):
+    name = 'saitm'
+    allowed_domains = ['saitm.edu.lk']
+    start_urls = ['http://www.saitm.edu.lk/']
+    
+    rules = [
+            Rule(LinkExtractor(allow = (
+                    
+                    )), 
+    follow = True , callback = 'parseSaitm')
+            
+            ]
