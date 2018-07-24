@@ -52,12 +52,40 @@ class SliitSpider(CrawlSpider):
 class SaitmSpider(CrawlSpider):
     name = 'saitm'
     allowed_domains = ['saitm.edu.lk']
-    start_urls = ['http://www.saitm.edu.lk/']
+    start_urls = ['http://www.saitm.edu.lk/e/UoS.htm',
+                  'http://www.saitm.edu.lk/fac_of_medicine/fac_of_medicine.htm',
+                  'http://www.saitm.edu.lk/fac_of_media/fac_of_media.htm',
+                  'http://www.saitm.edu.lk/fac_of_mgt/fac_of_mgt.htm',
+                  'http://www.saitm.edu.lk/fac_of_AHBS/fac_of_AHBS.htm'
+                 
+                  ]
     
     rules = [
             Rule(LinkExtractor(allow = (
-                    
+                    '^.*fac_of.*','^.*/e/'
                     )), 
     follow = True , callback = 'parseSaitm')
-            
             ]
+    
+    
+    def parseSaitm(self, response):
+        print("***************************** VISITED *********************************************")
+        aTags = re.compile(r'<a.*?/a>')
+        script = re.compile('<script*?</script>')
+        style = re.compile('<style*?</style>')
+        code = re.compile('\t.*\n')
+        comment = re.compile('<!--(\n|.)*-->')
+        responseBody = aTags.sub('',response.text)
+        responseBody =code.sub('',responseBody)
+        responseBody =comment.sub('',responseBody)
+        soup = BeautifulSoup(responseBody, 'html.parser')
+        p = re.compile('\n(\n| )*')
+        current = p.sub('\n',aTags.sub('',str(soup.get_text())))
+        item = Page()
+        item['Content'] = current
+        item['City'] = {'Kandy', 'Colombo', 'Kuruegala'}
+        item['Institute'] = {'SAITM', 'South Asian Institute of Technology and Medicine '}
+        item['URL'] = response.request.url
+        yield(item)
+    
+    
